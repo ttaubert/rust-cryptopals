@@ -124,7 +124,6 @@ impl<'a> Iterator for Base64Encoder<'a> {
 #[cfg(test)]
 mod test {
   use std::iter::FromIterator;
-
   use HexDecoder;
   use Base64Encoder;
 
