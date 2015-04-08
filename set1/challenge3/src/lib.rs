@@ -30,6 +30,26 @@ struct XorCandidate {
   score: usize
 }
 
+impl XorCandidate {
+  fn new(bytes: Vec<u8>) -> XorCandidate {
+    let mut score = 0us;
+
+    fn is_letter(chr: u8) -> bool {
+      (chr >= 65 && chr <= 90) || (chr >= 97 && chr <= 122)
+    }
+
+    // A text will very likely have more letters than non-letter symbols.
+    let num_letters = bytes.iter().filter(|x| is_letter(**x)).count();
+    let num_non_letters = bytes.iter().filter(|x| !is_letter(**x)).count();
+    score += num_letters / num_non_letters;
+
+    // The number of works seems a good metric.
+    score += bytes.split(|chr| *chr == 32u8).count();
+
+    XorCandidate { bytes: bytes, score: score }
+  }
+}
+
 impl PartialEq for XorCandidate {
   fn eq(&self, other: &XorCandidate) -> bool {
     self.score.eq(&other.score)
@@ -66,41 +86,21 @@ impl<'a> Iterator for XorCandidates<'a> {
 
   #[inline]
   fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-    while self.byte <= 255 {
-      // Construct the current key.
-      let key_bytes = repeat(self.byte as u8).take(self.ciphertext.len());
-      let key = Vec::from_iter(key_bytes);
-      self.byte += 1;
-
-      // Decrypt using the current key.
-      let xor = XOR::new(&key[..], self.ciphertext);
-      let xor = Vec::from_iter(xor);
-
-      // Ignore candidates with zero scores.
-      let score = calculate_score(&xor[..]);
-      if score > 0 {
-        return Some(XorCandidate { bytes: xor, score: score });
-      }
+    if self.byte > 255 {
+      return None;
     }
 
-    None
+    // Construct the current key.
+    let key_bytes = repeat(self.byte as u8).take(self.ciphertext.len());
+    let key = Vec::from_iter(key_bytes);
+    self.byte += 1;
+
+    // Decrypt using the current key.
+    let xor = XOR::new(&key[..], self.ciphertext);
+    let xor = Vec::from_iter(xor);
+
+    Some(XorCandidate::new(xor))
   }
-}
-
-fn calculate_score(candidate: &[u8]) -> usize {
-  let mut score = 0us;
-
-  fn is_letter(chr: u8) -> bool {
-    (chr >= 65 && chr <= 90) || (chr >= 97 && chr <= 122)
-  }
-
-  // A text will very likely have more letters than non-letter symbols.
-  let num_letters = candidate.iter().filter(|x| is_letter(**x)).count();
-  let num_non_letters = candidate.iter().filter(|x| !is_letter(**x)).count();
-  score += num_letters / num_non_letters;
-
-  // The number of works seems a good metric.
-  score + candidate.split(|chr| *chr == 32u8).count()
 }
 
 #[cfg(test)]
