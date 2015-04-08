@@ -1,14 +1,14 @@
 use std::char;
-use std::slice::Chunks;
 
 pub struct HexDecoder<'a> {
-  chunks: Chunks<'a, u8>
+  bytes: &'a [u8],
+  index: usize
 }
 
 impl<'a> HexDecoder<'a> {
-  pub fn new(v: &str) -> HexDecoder {
-    assert!(v.len() % 2 == 0);
-    HexDecoder { chunks: v.as_bytes().chunks(2) }
+  pub fn new(bytes: &'a [u8]) -> HexDecoder<'a> {
+    assert!(bytes.len() % 2 == 0);
+    HexDecoder { bytes: bytes, index: 0 }
   }
 
   fn digit(&self, byte: u8) -> u8 {
@@ -30,13 +30,15 @@ impl<'a> Iterator for HexDecoder<'a> {
 
   #[inline]
   fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-    match self.chunks.next() {
-      None => None,
-
-      Some(chunk) => {
-        Some(16 * self.digit(chunk[0]) + self.digit(chunk[1]))
-      }
+    // Bail out early if we're done.
+    if self.index >= self.bytes.len() {
+      return None;
     }
+
+    let index = self.index;
+    self.index += 2;
+
+    Some(16 * self.digit(self.bytes[index]) + self.digit(self.bytes[index + 1]))
   }
 }
 
@@ -129,24 +131,24 @@ mod test {
 
   #[test]
   fn test() {
-    let decoder = HexDecoder::new("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d");
+    let decoder = HexDecoder::new(b"49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d");
     let bytes = Vec::from_iter(decoder);
     let encoder = Base64Encoder::new(&bytes[..]);
-    assert!(String::from_iter(encoder) == "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t");
+    assert_eq!(String::from_iter(encoder), "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t");
 
     let encoder = Base64Encoder::new("pleasure.".as_bytes());
-    assert!(String::from_iter(encoder) == "cGxlYXN1cmUu");
+    assert_eq!(String::from_iter(encoder), "cGxlYXN1cmUu");
 
     let encoder = Base64Encoder::new("leasure.".as_bytes());
-    assert!(String::from_iter(encoder) == "bGVhc3VyZS4=");
+    assert_eq!(String::from_iter(encoder), "bGVhc3VyZS4=");
 
     let encoder = Base64Encoder::new("easure.".as_bytes());
-    assert!(String::from_iter(encoder) == "ZWFzdXJlLg==");
+    assert_eq!(String::from_iter(encoder), "ZWFzdXJlLg==");
 
     let encoder = Base64Encoder::new("asure.".as_bytes());
-    assert!(String::from_iter(encoder) == "YXN1cmUu");
+    assert_eq!(String::from_iter(encoder), "YXN1cmUu");
 
     let encoder = Base64Encoder::new("sure.".as_bytes());
-    assert!(String::from_iter(encoder) == "c3VyZS4=");
+    assert_eq!(String::from_iter(encoder), "c3VyZS4=");
   }
 }

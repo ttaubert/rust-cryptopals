@@ -1,0 +1,10 @@
+[package]
+name = "challenge3"
+version = "0.0.1"
+authors = ["Tim Taubert <tim@timtaubert.de>"]
+
+[dependencies.challenge1]
+path = "../challenge1"
+
+[dependencies.challenge2]
+path = "../challenge2"

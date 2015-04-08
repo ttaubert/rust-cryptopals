@@ -87,16 +87,16 @@ mod test {
 
   #[test]
   fn test() {
-    let decoder = HexDecoder::new("1c0111001f010100061a024b53535009181c");
+    let decoder = HexDecoder::new(b"1c0111001f010100061a024b53535009181c");
     let bytes = Vec::from_iter(decoder);
 
-    let decoder = HexDecoder::new("686974207468652062756c6c277320657965");
+    let decoder = HexDecoder::new(b"686974207468652062756c6c277320657965");
     let bytes2 = Vec::from_iter(decoder);
 
     let xor = XOR::new(&bytes[..], &bytes2[..]);
     let xored = Vec::from_iter(xor);
 
     let encoder = HexEncoder::new(&xored[..]);
-    assert!(String::from_iter(encoder) == "746865206b696420646f6e277420706c6179");
+    assert_eq!(String::from_iter(encoder), "746865206b696420646f6e277420706c6179");
   }
 }
