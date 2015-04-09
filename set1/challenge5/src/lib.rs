@@ -9,6 +9,7 @@ pub struct RepeatingXor<'a> {
 
 impl<'a> RepeatingXor<'a> {
   pub fn new(key: &'a [u8], bytes: &'a [u8]) -> RepeatingXor<'a> {
+    assert!(key.len() > 0 && bytes.len() > 0);
     RepeatingXor { key: key, kindex: 0, bytes: bytes, index: 0 }
   }
 }
