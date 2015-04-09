@@ -41,7 +41,7 @@ mod test {
   #[test]
   fn test() {
     let key = ['I' as u8, 'C' as u8, 'E' as u8];
-    let data = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal".to_string();
+    let data = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
 
     // Encrypt.
     let xor = RepeatingXor::new(&key, data.as_bytes());
