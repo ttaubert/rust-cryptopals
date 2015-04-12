@@ -1,102 +1,49 @@
 extern crate challenge1;
 
-use std::char;
+use std::iter::FromIterator;
 
-pub struct XOR<'a> {
-  bytes: &'a [u8],
-  bytes2: &'a [u8],
-  index: usize
+pub trait Xor<'a> {
+  fn xor(&self, other: &'a [u8]) -> Vec<u8>;
 }
 
-impl<'a> XOR<'a> {
-  pub fn new(bytes: &'a [u8], bytes2: &'a [u8]) -> XOR<'a> {
-    assert!(bytes.len() == bytes2.len());
-    XOR { bytes: bytes, bytes2: bytes2, index: 0 }
+impl<'a> Xor<'a> for [u8] {
+  fn xor(&self, other: &'a [u8]) -> Vec<u8> {
+    Vec::from_iter(self.iter().zip(other.iter()).map(|(a, b)| a ^ b))
   }
 }
 
-impl<'a> Iterator for XOR<'a> {
-  type Item = u8;
+static CHARS: &'static[u8] = b"0123456789abcdef";
 
-  #[inline]
-  fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-    if self.index >= self.bytes.len() {
-      return None;
-    }
-
-    let index = self.index;
-    self.index += 1;
-
-    Some(self.bytes[index] ^ self.bytes2[index])
-  }
+pub trait HexEncoder {
+  fn to_hex(&self) -> String;
 }
 
-pub struct HexEncoder<'a> {
-  bytes: &'a [u8],
-  index: usize,
-  nchar: usize
-}
+impl HexEncoder for [u8] {
+  fn to_hex(&self) -> String {
+    let mut buf = Vec::with_capacity(self.len() * 2);
 
-impl<'a> HexEncoder<'a> {
-  pub fn new(bytes: &'a [u8]) -> HexEncoder<'a> {
-    HexEncoder { bytes: bytes, index: 0, nchar: 0 }
-  }
-
-  fn character(&self, num: u8) -> Option<char> {
-    assert!(num < 16);
-    let num = num as u32;
-
-    if num < 10 {
-      char::from_u32('0' as u32 + num)
-    } else {
-      char::from_u32('a' as u32 + num - 10)
-    }
-  }
-}
-
-impl<'a> Iterator for HexEncoder<'a> {
-  type Item = char;
-
-  #[inline]
-  fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-    // Bail out early if we're done.
-    if self.index >= self.bytes.len() {
-      return None;
+    for byte in self {
+      buf.push(CHARS[(byte / 16) as usize]);
+      buf.push(CHARS[(byte % 16) as usize]);
     }
 
-    let nchar = self.nchar;
-    self.nchar = (self.nchar + 1) % 2;
-
-    if nchar == 0 {
-      return self.character(self.bytes[self.index] / 16);
+    unsafe {
+      String::from_utf8_unchecked(buf)
     }
-
-    let index = self.index;
-    self.index += 1;
-
-    return self.character(self.bytes[index] % 16);
   }
 }
 
 #[cfg(test)]
 mod test {
-  use std::iter::FromIterator;
   use challenge1::HexDecoder;
   use HexEncoder;
-  use XOR;
+  use Xor;
 
   #[test]
   fn test() {
-    let decoder = HexDecoder::new(b"1c0111001f010100061a024b53535009181c");
-    let bytes = Vec::from_iter(decoder);
-
-    let decoder = HexDecoder::new(b"686974207468652062756c6c277320657965");
-    let bytes2 = Vec::from_iter(decoder);
-
-    let xor = XOR::new(&bytes[..], &bytes2[..]);
-    let xored = Vec::from_iter(xor);
-
-    let encoder = HexEncoder::new(&xored[..]);
-    assert_eq!(String::from_iter(encoder), "746865206b696420646f6e277420706c6179");
+    let data1 = "1c0111001f010100061a024b53535009181c".from_hex();
+    let data2 = "686974207468652062756c6c277320657965".from_hex();
+    let xored = data1.xor(&data2[..]);
+    assert_eq!(xored.to_hex(), "746865206b696420646f6e277420706c6179");
   }
 }
