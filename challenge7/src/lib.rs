@@ -2,13 +2,14 @@ extern crate openssl;
 extern crate challenge4;
 extern crate challenge6;
 
-use openssl::crypto::symm::{Crypter, Mode, Type};
+use openssl::crypto::symm as cipher;
 
 pub fn aes_128_ecb_decrypt(key: &[u8], ciphertext: &[u8]) -> Vec<u8> {
-  let cipher = Crypter::new(Type::AES_128_ECB);
-  cipher.init(Mode::Decrypt, key, vec!());
+  let cipher = cipher::Crypter::new(cipher::Type::AES_128_ECB);
+  cipher.init(cipher::Mode::Decrypt, key, vec!());
+  cipher.pad(false);
 
-  let mut decrypted = cipher.update(&ciphertext[..]);
+  let mut decrypted = cipher.update(ciphertext);
   decrypted.extend(cipher.finalize().into_iter());
   decrypted
 }

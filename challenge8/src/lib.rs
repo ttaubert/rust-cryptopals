@@ -3,15 +3,10 @@ extern crate challenge4;
 use std::collections::HashSet;
 
 pub fn find_ecb_ciphertext<'a>(ciphertexts: &[&'a str]) -> &'a str {
-  let blocksize = 16 * 2;
-
   for ciphertext in ciphertexts {
-    assert!(ciphertext.len() % blocksize == 0);
     let mut blocks = HashSet::new();
 
-    for i in 0..ciphertext.len() / blocksize {
-      let block = &ciphertext[i * blocksize..(i + 1) * blocksize];
-
+    for block in ciphertext.as_bytes().chunks(16 * 2) {
       // Did we find a duplicate ciphertext block?
       if blocks.contains(block) {
         return ciphertext;
