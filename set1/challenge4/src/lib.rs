@@ -1,3 +1,4 @@
+extern crate challenge1;
 extern crate challenge3;
 
 use std::fs::File;
@@ -15,14 +16,15 @@ pub fn read_file(path: &str) -> String {
 #[cfg(test)]
 mod test {
   use std::iter::FromIterator;
-  use challenge3::{find_decryption, score_text_structure};
+  use challenge1::HexDecoder;
+  use challenge3::find_decryption;
   use read_file;
 
   #[test]
   fn test() {
     let data = read_file("data.txt");
-    let lines = Vec::from_iter(data.split('\n'));
-    let decrypted = find_decryption(&lines[..], score_text_structure);
+    let lines = Vec::from_iter(data.split('\n').map(|line| line.from_hex()));
+    let (_, decrypted) = find_decryption(&lines[..]);
     assert_eq!(String::from_utf8(decrypted).unwrap(), "Now that the party is jumping\n");
   }
 }

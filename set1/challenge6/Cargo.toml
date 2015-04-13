@@ -1,5 +1,5 @@
 [package]
-name = "challenge4"
+name = "challenge6"
 version = "0.0.1"
 authors = ["Tim Taubert <tim@timtaubert.de>"]
 
@@ -8,3 +8,9 @@ path = "../challenge1"
 
 [dependencies.challenge3]
 path = "../challenge3"
+
+[dependencies.challenge4]
+path = "../challenge4"
+
+[dependencies.challenge5]
+path = "../challenge5"

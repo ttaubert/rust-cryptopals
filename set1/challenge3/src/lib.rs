@@ -4,15 +4,12 @@ extern crate challenge2;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::iter::{FromIterator, repeat};
-use challenge1::HexDecoder;
 use challenge2::Xor;
 
-pub fn find_decryption<F>(ciphertexts: &[&str], scoring_fun: F) -> Vec<u8>
-    where F: Fn(&[u8]) -> usize
-{
-  let mut heap = BinaryHeap::new();
+pub fn find_decryption(ciphertexts: &[Vec<u8>]) -> (u8, Vec<u8>) {
+  let mut heap = BinaryHeap::with_capacity(256 * ciphertexts.len());
 
-  for ciphertext in ciphertexts.iter().map(|ct| ct.from_hex()) {
+  for ciphertext in ciphertexts {
     // Try all 256 possible keys.
     for byte in 0us..256 {
       // Construct the current key.
@@ -20,15 +17,16 @@ pub fn find_decryption<F>(ciphertexts: &[&str], scoring_fun: F) -> Vec<u8>
 
       // Decrypt using the current key and score.
       let decryption = ciphertext.xor(&key[..]);
-      let score = scoring_fun(&decryption[..]);
+      let score = score_text_structure(&decryption[..]);
 
       // Put into the max heap.
-      heap.push(Candidate { bytes: decryption, score: score });
+      heap.push(CandidateKey { key: byte as u8, bytes: decryption, score: score });
     }
   }
 
   // Return the decryption of the highest-scoring candidate.
-  heap.pop().expect("no ciphertexts given").bytes
+  let best = heap.pop().expect("no ciphertexts given");
+  (best.key, best.bytes)
 }
 
 pub fn score_text_structure(bytes: &[u8]) -> usize {
@@ -47,40 +45,41 @@ pub fn score_text_structure(bytes: &[u8]) -> usize {
   score + bytes.split(|byte| *byte == 32u8).count()
 }
 
-struct Candidate {
+struct CandidateKey {
+  key: u8,
   bytes: Vec<u8>,
   score: usize
 }
 
-impl PartialEq for Candidate {
-  fn eq(&self, other: &Candidate) -> bool {
+impl PartialEq for CandidateKey {
+  fn eq(&self, other: &CandidateKey) -> bool {
     self.score.eq(&other.score)
   }
 }
 
-impl Eq for Candidate {}
+impl Eq for CandidateKey {}
 
-impl PartialOrd for Candidate {
-  fn partial_cmp(&self, other: &Candidate) -> Option<Ordering> {
+impl PartialOrd for CandidateKey {
+  fn partial_cmp(&self, other: &CandidateKey) -> Option<Ordering> {
     self.score.partial_cmp(&other.score)
   }
 }
 
-impl Ord for Candidate {
-  fn cmp(&self, other: &Candidate) -> Ordering {
+impl Ord for CandidateKey {
+  fn cmp(&self, other: &CandidateKey) -> Ordering {
     self.score.cmp(&other.score)
   }
 }
 
 #[cfg(test)]
 mod test {
+  use challenge1::HexDecoder;
   use find_decryption;
-  use score_text_structure;
 
   #[test]
   fn test() {
-    let ciphertexts = ["1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"];
-    let decrypted = find_decryption(&ciphertexts, score_text_structure);
+    let ciphertext = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736".from_hex();
+    let (_, decrypted) = find_decryption(&[ciphertext]);
     assert_eq!(String::from_utf8(decrypted).unwrap(), "Cooking MC's like a pound of bacon");
   }
 }
