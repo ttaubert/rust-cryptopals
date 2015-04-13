@@ -33,7 +33,7 @@ impl Base64Encoder for [u8] {
     // Four characters per triple of bytes.
     let mut buf = Vec::with_capacity((self.len() / 3) * 4);
 
-    fn character(index: u8) -> u8 {
+    fn convert(index: u8) -> u8 {
       // Zero the two MSBs.
       CHARS[(index & 0x3f) as usize]
     }
@@ -46,19 +46,19 @@ impl Base64Encoder for [u8] {
       let byte3 = if chunk.len() > 2 { chunk[2] } else { 0 };
 
       // 1st char = 6 MSBs of the first byte.
-      buf.push(character(byte1 >> 2));
+      buf.push(convert(byte1 >> 2));
 
       // 2nd char = 2 LSBs of the first byte + 4 MSBs of second byte.
-      buf.push(character(byte1 << 4 | byte2 >> 4));
+      buf.push(convert(byte1 << 4 | byte2 >> 4));
 
       if chunk.len() > 1 {
         // 3rd char = 4 LSBs of the second byte + 2 MSBs of third byte.
-        buf.push(character(byte2 << 2 | byte3 >> 6));
+        buf.push(convert(byte2 << 2 | byte3 >> 6));
       }
 
       if chunk.len() == 3 {
         // 4th char = 6 LSBs of the third byte.
-        buf.push(character(byte3));
+        buf.push(convert(byte3));
       }
 
       // Add padding.

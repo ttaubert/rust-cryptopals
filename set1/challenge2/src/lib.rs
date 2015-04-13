@@ -2,12 +2,12 @@ extern crate challenge1;
 
 use std::iter::FromIterator;
 
-pub trait Xor<'a> {
-  fn xor(&self, other: &'a [u8]) -> Vec<u8>;
+pub trait Xor {
+  fn xor(&self, other: &[u8]) -> Vec<u8>;
 }
 
-impl<'a> Xor<'a> for [u8] {
-  fn xor(&self, other: &'a [u8]) -> Vec<u8> {
+impl Xor for [u8] {
+  fn xor(&self, other: &[u8]) -> Vec<u8> {
     Vec::from_iter(self.iter().zip(other.iter()).map(|(a, b)| a ^ b))
   }
 }
