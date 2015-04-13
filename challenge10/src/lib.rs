@@ -9,6 +9,8 @@ use challenge2::Xor;
 use challenge7::aes_128_ecb_decrypt;
 
 pub fn aes_128_ecb_encrypt(key: &[u8], plaintext: &[u8]) -> Vec<u8> {
+  assert!(key.len() == 16 && plaintext.len() % 16 == 0);
+
   let cipher = cipher::Crypter::new(cipher::Type::AES_128_ECB);
   cipher.init(cipher::Mode::Encrypt, key, vec!());
   cipher.pad(false);
@@ -19,7 +21,7 @@ pub fn aes_128_ecb_encrypt(key: &[u8], plaintext: &[u8]) -> Vec<u8> {
 }
 
 pub fn aes_128_cbc_encrypt(key: &[u8], plaintext: &[u8], iv: Vec<u8>) -> Vec<u8> {
-  assert!(plaintext.len() % 16 == 0 && iv.len() == 16);
+  assert!(key.len() == 16 && plaintext.len() % 16 == 0 && iv.len() == 16);
 
   let mut iv = iv;
   let mut ciphertext = Vec::with_capacity(plaintext.len());
@@ -34,7 +36,7 @@ pub fn aes_128_cbc_encrypt(key: &[u8], plaintext: &[u8], iv: Vec<u8>) -> Vec<u8>
 }
 
 pub fn aes_128_cbc_decrypt(key: &[u8], ciphertext: &[u8], iv: Vec<u8>) -> Vec<u8> {
-  assert!(ciphertext.len() % 16 == 0 && iv.len() == 16);
+  assert!(key.len() == 16 && ciphertext.len() % 16 == 0 && iv.len() == 16);
 
   let mut iv = &iv[..];
   let mut plaintext = Vec::with_capacity(ciphertext.len());
