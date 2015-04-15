@@ -3,10 +3,12 @@ extern crate challenge2;
 extern crate challenge4;
 extern crate challenge6;
 extern crate challenge7;
+extern crate challenge9;
 
 use openssl::crypto::symm as cipher;
 use challenge2::Xor;
 use challenge7::aes_128_ecb_decrypt;
+use challenge9::PKCS7Pad;
 
 pub fn aes_128_ecb_encrypt(key: &[u8], plaintext: &[u8]) -> Vec<u8> {
   assert!(key.len() == 16 && plaintext.len() % 16 == 0);
@@ -21,7 +23,8 @@ pub fn aes_128_ecb_encrypt(key: &[u8], plaintext: &[u8]) -> Vec<u8> {
 }
 
 pub fn aes_128_cbc_encrypt(key: &[u8], plaintext: &[u8], iv: Vec<u8>) -> Vec<u8> {
-  assert!(key.len() == 16 && plaintext.len() % 16 == 0 && iv.len() == 16);
+  assert!(key.len() == 16 && iv.len() == 16);
+  let plaintext = plaintext.pkcs7_pad(16);
 
   let mut iv = iv;
   let mut ciphertext = Vec::with_capacity(plaintext.len());
@@ -67,6 +70,8 @@ mod test {
 
     let plaintext = String::from_utf8(bytes.clone()).unwrap();
     assert!(plaintext.starts_with("I'm back and I'm ringin' the bell \nA rockin' on the mike while the fly girls yell \nIn ecstasy in the back of me"));
-    assert_eq!(aes_128_cbc_encrypt(key, &bytes[..], iv), data);
+
+    // Test vector has 4 padding bytes at the end.
+    assert_eq!(aes_128_cbc_encrypt(key, &bytes[..bytes.len()-4], iv), data);
   }
 }
