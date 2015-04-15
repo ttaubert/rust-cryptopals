@@ -1,0 +1,16 @@
+[package]
+name = "challenge11"
+version = "0.0.1"
+authors = ["Tim Taubert <tim@timtaubert.de>"]
+
+[dependencies.challenge8]
+path = "../challenge8"
+
+[dependencies.challenge9]
+path = "../challenge9"
+
+[dependencies.challenge10]
+path = "../challenge10"
+
+[dependencies.rand]
+rand = "0.3"
