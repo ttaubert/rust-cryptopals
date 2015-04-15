@@ -6,7 +6,7 @@ pub trait PKCS7Pad {
 
 impl PKCS7Pad for [u8] {
   fn pkcs7_pad(&self, len: usize) -> Vec<u8> {
-    let mut data = Vec::from_iter(self.iter().map(|byte| *byte));
+    let mut data = self.to_vec();
     let num = len - self.len() % len;
     data.extend(Vec::from_iter(repeat(num as u8).take(num)));
     data

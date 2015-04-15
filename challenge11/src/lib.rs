@@ -17,17 +17,16 @@ pub fn is_ecb_blackbox<F>(f: F, blocksize: usize) -> bool
   is_ecb_ciphertext(&ciphertext, blocksize)
 }
 
-pub fn encryption_oracle(input: &[u8]) -> Vec<u8> {
+pub fn black_box(input: &[u8]) -> Vec<u8> {
   let mut rng = OsRng::new().unwrap();
 
   // Generate a random key.
-  let key = random_bytes(16);
+  let mut key = [0u8; 16];
+  rng.fill_bytes(&mut key);
 
   // Sandwich the data between random pads.
   let mut data = random_padding();
-  for byte in input {
-    data.push(*byte);
-  }
+  data.extend(input.to_vec());
   data.extend(random_padding());
 
   // Pad to block size.
@@ -37,34 +36,29 @@ pub fn encryption_oracle(input: &[u8]) -> Vec<u8> {
   if rng.gen_range(0, 2) == 0 {
     aes_128_ecb_encrypt(&key, &data)
   } else {
-    let iv = random_bytes(16);
-    aes_128_cbc_encrypt(&key, &data, iv)
+    let mut iv = [0u8; 16];
+    rng.fill_bytes(&mut iv);
+    aes_128_cbc_encrypt(&key, &data, iv.to_vec())
   }
-}
-
-fn random_bytes(num: usize) -> Vec<u8> {
-  let mut rng = OsRng::new().unwrap();
-  let mut buf = Vec::from_iter(repeat(0u8).take(num));
-  rng.fill_bytes(&mut buf);
-  buf
 }
 
 fn random_padding() -> Vec<u8> {
   let mut rng = OsRng::new().unwrap();
-  let num = rng.gen_range(5, 11);
-  let mut pad = Vec::from_iter(repeat(0u8).take(num));
-  rng.fill_bytes(&mut pad);
-  pad
+
+  let mut buf = [0u8; 10];
+  rng.fill_bytes(&mut buf);
+
+  buf[..rng.gen_range(5, 11)].to_vec()
 }
 
 #[cfg(test)]
 mod test {
-  use encryption_oracle;
+  use black_box;
   use is_ecb_blackbox;
 
   #[test]
   fn test() {
-    let is_ecb = is_ecb_blackbox(encryption_oracle, 16);
+    let is_ecb = is_ecb_blackbox(black_box, 16);
 
     // Yeah that's lame but I manually confirmed it works.
     assert!(is_ecb || !is_ecb);

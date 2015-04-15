@@ -62,13 +62,13 @@ mod test {
     let data = read_file("data.txt").replace("\n", "").from_base64();
 
     let key = b"YELLOW SUBMARINE";
-    let iv = vec!(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-    let bytes = aes_128_cbc_decrypt(key, &data, iv.clone());
+    let iv = [0u8; 16];
+    let bytes = aes_128_cbc_decrypt(key, &data, iv.to_vec());
 
     let plaintext = String::from_utf8(bytes.clone()).unwrap();
     assert!(plaintext.starts_with("I'm back and I'm ringin' the bell \nA rockin' on the mike while the fly girls yell \nIn ecstasy in the back of me"));
 
     // Test vector has 4 padding bytes at the end.
-    assert_eq!(aes_128_cbc_encrypt(key, &bytes, iv), data);
+    assert_eq!(aes_128_cbc_encrypt(key, &bytes, iv.to_vec()), data);
   }
 }
