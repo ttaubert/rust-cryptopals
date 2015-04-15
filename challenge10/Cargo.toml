@@ -15,8 +15,5 @@ path = "../challenge6"
 [dependencies.challenge7]
 path = "../challenge7"
 
-[dependencies.challenge9]
-path = "../challenge9"
-
 [dependencies.openssl]
 openssl = "0.6.0"

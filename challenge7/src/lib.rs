@@ -25,7 +25,7 @@ mod test {
   #[test]
   fn test() {
     let data = read_file("data.txt").replace("\n", "").from_base64();
-    let bytes = aes_128_ecb_decrypt(b"YELLOW SUBMARINE", &data[..]);
+    let bytes = aes_128_ecb_decrypt(b"YELLOW SUBMARINE", &data);
     let plaintext = String::from_utf8(bytes).unwrap();
     assert!(plaintext.starts_with("I'm back and I'm ringin' the bell \nA rockin' on the mike while the fly girls yell \nIn ecstasy in the back of me"));
   }

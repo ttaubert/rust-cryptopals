@@ -16,8 +16,8 @@ pub fn find_decryption(ciphertexts: &[Vec<u8>]) -> (u8, Vec<u8>) {
       let key = Vec::from_iter(repeat(byte as u8).take(ciphertext.len()));
 
       // Decrypt using the current key and score.
-      let decryption = ciphertext.xor(&key[..]);
-      let score = score_text_structure(&decryption[..]);
+      let decryption = ciphertext.xor(&key);
+      let score = score_text_structure(&decryption);
 
       // Put into the max heap.
       heap.push(CandidateKey { key: byte as u8, bytes: decryption, score: score });

@@ -24,7 +24,7 @@ mod test {
   fn test() {
     let data = read_file("data.txt");
     let lines = Vec::from_iter(data.split('\n').map(|line| line.from_hex()));
-    let (_, decrypted) = find_decryption(&lines[..]);
+    let (_, decrypted) = find_decryption(&lines);
     assert_eq!(String::from_utf8(decrypted).unwrap(), "Now that the party is jumping\n");
   }
 }

@@ -43,7 +43,7 @@ mod test {
   fn test() {
     let data1 = "1c0111001f010100061a024b53535009181c".from_hex();
     let data2 = "686974207468652062756c6c277320657965".from_hex();
-    let xored = data1.xor(&data2[..]);
+    let xored = data1.xor(&data2);
     assert_eq!(xored.to_hex(), "746865206b696420646f6e277420706c6179");
   }
 }

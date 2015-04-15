@@ -22,8 +22,8 @@ pub fn find_repeated_xor_decryption(data: &[u8], num_tries: usize) -> Vec<u8> {
     }));
 
     // Decrypt and score.
-    let bytes = data.xor_repeat(&key[..]);
-    let score = score_text_structure(&bytes[..]);
+    let bytes = data.xor_repeat(&key);
+    let score = score_text_structure(&bytes);
     heap.push(CandidateDecryption { bytes: bytes, score: score });
   }
 
@@ -194,7 +194,7 @@ mod test {
   #[test]
   fn test() {
     let data = read_file("data.txt").replace("\n", "").from_base64();
-    let decryption = find_repeated_xor_decryption(&data[..], 3);
+    let decryption = find_repeated_xor_decryption(&data, 3);
     let decryption = String::from_utf8(decryption).unwrap();
     assert!(decryption.starts_with("I'm back and I'm ringin' the bell \nA rockin' on the mike while the fly girls yell \nIn ecstasy in the back of me"));
   }
