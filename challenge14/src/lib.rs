@@ -7,7 +7,6 @@ extern crate challenge12;
 
 use rand::{Rng, OsRng};
 use std::iter::{FromIterator, repeat};
-use std::ops::Range;
 use challenge6::Base64Decoder;
 use challenge9::PKCS7Pad;
 use challenge10::aes_128_ecb_encrypt;
@@ -79,23 +78,6 @@ pub fn determine_prefix_len<F>(f: F, blocksize: usize) -> usize
   }
 }
 
-pub fn determine_padding<F>(f: F, blocksize: usize, prefix_len: usize) -> usize
-    where F: Fn(&[u8]) -> Vec<u8>
-{
-  let prefix_pad = blocksize - prefix_len % blocksize;
-  let mut input = Vec::from_iter(repeat(0).take(prefix_pad));
-  let orig = f(&input).len();
-
-  loop {
-    // Append a byte to the input.
-    input.push(0);
-
-    if f(&input).len() > orig {
-      return input.len() - prefix_pad;
-    }
-  }
-}
-
 pub fn decrypt_ecb<F>(f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<u8> {
   // First, get the block size.
   let blocksize = determine_blocksize(f);
@@ -112,54 +94,17 @@ pub fn decrypt_ecb<F>(f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<u8> {
   // The sizes in bytes of the aligned padding.
   let prefix = prefix_blocks as usize * blocksize;
 
-  // Determine padding length.
-  let padding = determine_padding(f, blocksize, prefix_len);
+  // The padding we'll use to align the prefix to the block size.
+  let pad = Vec::from_iter(repeat(0).take(prefix_pad));
 
-  // The length of the secret, including padding. The pad is computed
-  // assuming that the prefix is padded to align with the block size.
-  let mut input = Vec::from_iter(repeat(0).take(prefix_pad));
-  let secret_len = f(&input).len() - prefix;
+  challenge12::decrypt_ecb(&|data| {
+    // Concat pad and given data.
+    let mut input = pad.clone();
+    input.extend(data.to_vec());
 
-  // Buffer to be passed to the black box and hold the decryption.
-  input.extend(Vec::from_iter(repeat(0).take(secret_len)));
-
-  // The position of the encrypted guess.
-  let end = prefix + secret_len;
-  let guess = Range { start: end - blocksize, end: end };
-
-  // Find the plaintext.
-  for index in 0..secret_len-padding {
-    // Append a padding block for every block we want to decrypt. It will shift
-    // to the left with every new byte we guess and contain the plaintext of
-    // the block prior to the one we want to decrypt.
-    if index % blocksize == 0 {
-      let end = prefix_pad + secret_len;
-      let block = input[end-blocksize..end].to_vec();
-      input.extend(block);
-    }
-
-    // Shift to the left.
-    input.remove(0);
-
-    // Position of the current ciphertext block we are decrypting.
-    let start = prefix + secret_len + index - index % blocksize;
-    let target = Range { start: start, end: start + blocksize };
-
-    // Try all 256 possible bytes.
-    for byte in 0..256 {
-      // Apply and encrypt our current guess.
-      input[prefix_pad + secret_len - 1] = byte as u8;
-      let encryption = f(&input);
-
-      // Stop when we found the correct byte.
-      if encryption[guess.clone()] == encryption[target.clone()] {
-        break;
-      }
-    }
-  }
-
-  // Carve the decryption out of the buffer.
-  input[prefix_pad+padding..prefix_pad+secret_len].to_vec()
+    // Remove the prefix blocks.
+    f(&input)[prefix..].to_vec()
+  })
 }
 
 #[cfg(test)]
@@ -170,7 +115,6 @@ mod test {
   use SECRET;
   use BlackBox;
   use decrypt_ecb;
-  use determine_padding;
   use determine_prefix_len;
 
   #[test]
@@ -199,14 +143,5 @@ mod test {
     let blocksize = determine_blocksize(|data| blackbox.encrypt(data));
     let prefix_len = determine_prefix_len(|data| blackbox.encrypt(data), blocksize);
     assert_eq!(prefix_len, blackbox.prefix.len());
-  }
-
-  #[test]
-  fn test_padding() {
-    let blackbox = BlackBox::new();
-    let blocksize = determine_blocksize(|data| blackbox.encrypt(data));
-    let prefix_len = determine_prefix_len(|data| blackbox.encrypt(data), blocksize);
-    let padding = determine_padding(|data| blackbox.encrypt(data), blocksize, prefix_len);
-    assert_eq!(padding, blocksize - SECRET.from_base64().len() % blocksize);
   }
 }
