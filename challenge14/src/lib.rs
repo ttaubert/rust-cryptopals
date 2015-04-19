@@ -1,53 +1,35 @@
 extern crate rand;
 extern crate challenge6;
-extern crate challenge9;
-extern crate challenge10;
 extern crate challenge11;
 extern crate challenge12;
 
 use rand::{Rng, OsRng};
 use std::iter::{FromIterator, repeat};
-use challenge6::Base64Decoder;
-use challenge9::PKCS7Pad;
-use challenge10::aes_128_ecb_encrypt;
 use challenge11::is_ecb_blackbox;
 use challenge12::determine_blocksize;
 
-static SECRET: &'static str = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK";
-
 pub struct BlackBox {
-  key: [u8; 16],
+  blackbox: challenge12::BlackBox,
   prefix: Vec<u8>,
-  secret: Vec<u8>
 }
 
 impl BlackBox {
   pub fn new() -> BlackBox {
     let mut rng = OsRng::new().unwrap();
 
-    // Generate a random key.
-    let mut key = [0u8; 16];
-    rng.fill_bytes(&mut key);
-
     // Generate a random prefix.
     let mut prefix = [0u8; 64];
     rng.fill_bytes(&mut prefix);
     let prefix = prefix[..rng.gen_range(1, 65)].to_vec();
 
-    BlackBox { key: key, prefix: prefix, secret: SECRET.from_base64() }
+    let blackbox = challenge12::BlackBox::new();
+    BlackBox { blackbox: blackbox, prefix: prefix }
   }
 
   pub fn encrypt(&self, input: &[u8]) -> Vec<u8> {
-    // Sandwich data between prefix and secret.
     let mut data = self.prefix.clone();
     data.extend(input.to_vec());
-    data.extend(self.secret.clone());
-
-    // Pad to block size.
-    let data = data.pkcs7_pad(16);
-
-    // Encrypt.
-    aes_128_ecb_encrypt(&self.key, &data)
+    self.blackbox.encrypt(&data)
   }
 }
 
@@ -111,8 +93,7 @@ pub fn decrypt_ecb<F>(f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<u8> {
 mod test {
   use challenge6::Base64Decoder;
   use challenge11::is_ecb_blackbox;
-  use challenge12::determine_blocksize;
-  use SECRET;
+  use challenge12::{determine_blocksize, SECRET};
   use BlackBox;
   use decrypt_ecb;
   use determine_prefix_len;
