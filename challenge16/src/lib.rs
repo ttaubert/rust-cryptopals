@@ -8,10 +8,25 @@ use rand::{Rng, OsRng};
 use challenge2::Xor;
 use challenge7::aes_128_ecb_decrypt;
 use challenge9::PKCS7Pad;
-use challenge10::aes_128_cbc_encrypt;
+use challenge10::aes_128_ecb_encrypt;
 
 static PREFIX: &'static[u8] = b"comment1=cooking%20MCs;userdata=";
 static POSTFIX: &'static[u8] = b";comment2=%20like%20a%20pound%20of%20bacon";
+
+pub fn aes_128_cbc_encrypt(key: &[u8], plaintext: &[u8], iv: Vec<u8>) -> Vec<u8> {
+  assert!(key.len() == 16 && plaintext.len() % 16 == 0 && iv.len() == 16);
+
+  let mut ciphertext = iv.clone();
+  let mut iv = iv;
+
+  for block in plaintext.chunks(16) {
+    let encrypted = aes_128_ecb_encrypt(key, &iv.xor(block));
+    ciphertext.extend(encrypted.clone());
+    iv = encrypted;
+  }
+
+  ciphertext
+}
 
 pub fn aes_128_cbc_decrypt(key: &[u8], ciphertext: &[u8]) -> Vec<u8> {
   assert!(key.len() == 16 && ciphertext.len() % 16 == 0);
@@ -63,12 +78,7 @@ impl BlackBox {
     rng.fill_bytes(&mut iv);
 
     // Encrypt.
-    let encryption = aes_128_cbc_encrypt(&self.key, &data, iv.to_vec());
-
-    // Prepend IV to ciphertext.
-    let mut data = iv.to_vec();
-    data.extend(encryption);
-    data
+    aes_128_cbc_encrypt(&self.key, &data, iv.to_vec())
   }
 
   pub fn is_admin(&self, data: &[u8]) -> bool {
