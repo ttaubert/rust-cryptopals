@@ -12,22 +12,29 @@ use challenge5::RepeatedXor;
 pub fn find_repeated_xor_decryption(data: &[u8], num_tries: usize) -> Vec<u8> {
   let mut heap = BinaryHeap::with_capacity(num_tries);
 
+  // Try various key sizes and take the |num_tries| best ones.
   for size in rank_xor_keysizes(data).iter().take(num_tries) {
-    // Cut the text into |size| blocks.
-    let blocks = cut_into_blocks(data, *size);
-
-    // Determine the most likely key for each block.
-    let key = Vec::from_iter(blocks.into_iter().map(|block| {
-      find_decryption(&[block]).0
-    }));
-
-    // Decrypt and score.
-    let bytes = data.xor_repeat(&key);
-    let score = score_text_structure(&bytes);
+    let (bytes, score) = find_repeated_xor_decryption_for_keysize(data, *size);
     heap.push(CandidateDecryption { bytes: bytes, score: score });
   }
 
   heap.pop().expect("no decryption candidates?").bytes
+}
+
+pub fn find_repeated_xor_decryption_for_keysize(data: &[u8], key_size: usize) -> (Vec<u8>, usize) {
+  // Cut the text into |size| blocks.
+  let blocks = cut_into_blocks(data, key_size);
+
+  // Determine the most likely key for each block.
+  let key = Vec::from_iter(blocks.into_iter().map(|block| {
+    find_decryption(&[block]).0
+  }));
+
+  // Decrypt and score.
+  let bytes = data.xor_repeat(&key);
+  let score = score_text_structure(&bytes);
+
+  (bytes, score)
 }
 
 struct CandidateDecryption {

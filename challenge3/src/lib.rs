@@ -39,7 +39,9 @@ pub fn score_text_structure(bytes: &[u8]) -> usize {
   // A text will very likely have more letters than non-letter symbols.
   let num_letters = bytes.iter().filter(|x| is_letter(**x)).count();
   let num_non_letters = bytes.len() - num_letters;
-  score += num_letters / num_non_letters;
+  if num_non_letters > 0 {
+    score += num_letters / num_non_letters;
+  }
 
   // The number of words seems a good metric too.
   score + bytes.split(|byte| *byte == 32u8).count()
