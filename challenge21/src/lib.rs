@@ -15,6 +15,10 @@ pub struct MT19937RNG {
 }
 
 impl MT19937RNG {
+  pub fn from_state(state: [u32; N]) -> Self {
+    MT19937RNG { index: 0, state: state }
+  }
+
   fn generate(&mut self) {
     for i in 0..N {
       let byte = (self.state[i] & UPPER_MASK) | (self.state[(i + 1) % N] & LOWER_MASK);
@@ -51,14 +55,16 @@ impl Rng for MT19937RNG {
       self.generate();
     }
 
-    let mut byte = self.state[self.index];
-    byte ^= byte >> 11;
-    byte ^= (byte << 7) & 0x9d2c5680;
-    byte ^= (byte << 15) & 0xefc60000;
-    byte ^= byte >> 18;
+    let mut word = self.state[self.index];
+
+    // Temper.
+    word ^= word >> 11;
+    word ^= (word << 7) & 0x9d2c5680;
+    word ^= (word << 15) & 0xefc60000;
+    word ^= word >> 18;
 
     self.index = (self.index + 1) % N;
-    byte
+    word
   }
 }
 
@@ -107,6 +113,24 @@ mod test {
   fn test_same() {
     let mut rng1 = MT19937RNG::from_seed(12345678);
     let mut rng2 = MT19937RNG::from_seed(12345678);
+
+    let out1 = rng1.gen_iter::<u32>();
+    let out2 = rng2.gen_iter::<u32>();
+
+    for (a, b) in out1.zip(out2.take(1000)) {
+      assert_eq!(a, b);
+    }
+  }
+
+  #[test]
+  fn test_from_state() {
+    let mut rng1 = MT19937RNG::from_seed(12345678);
+
+    let mut state = [0; 624];
+    for (i, word) in rng1.state.iter().enumerate() {
+      state[i] = *word;
+    }
+    let mut rng2 = MT19937RNG::from_state(state);
 
     let out1 = rng1.gen_iter::<u32>();
     let out2 = rng2.gen_iter::<u32>();
