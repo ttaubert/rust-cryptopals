@@ -14,14 +14,15 @@ pub fn find_repeated_xor_decryption(data: &[u8], num_tries: usize) -> Vec<u8> {
 
   // Try various key sizes and take the |num_tries| best ones.
   for size in rank_xor_keysizes(data).iter().take(num_tries) {
-    let (bytes, score) = find_repeated_xor_decryption_for_keysize(data, *size);
+    let bytes = find_repeated_xor_decryption_for_keysize(data, *size);
+    let score = score_text_structure(&bytes);
     heap.push(CandidateDecryption { bytes: bytes, score: score });
   }
 
   heap.pop().expect("no decryption candidates?").bytes
 }
 
-pub fn find_repeated_xor_decryption_for_keysize(data: &[u8], key_size: usize) -> (Vec<u8>, usize) {
+pub fn find_repeated_xor_decryption_for_keysize(data: &[u8], key_size: usize) -> Vec<u8> {
   // Cut the text into |size| blocks.
   let blocks = cut_into_blocks(data, key_size);
 
@@ -30,11 +31,8 @@ pub fn find_repeated_xor_decryption_for_keysize(data: &[u8], key_size: usize) ->
     find_decryption(&[block]).0
   }));
 
-  // Decrypt and score.
-  let bytes = data.xor_repeat(&key);
-  let score = score_text_structure(&bytes);
-
-  (bytes, score)
+  // Decrypt.
+  data.xor_repeat(&key)
 }
 
 struct CandidateDecryption {

@@ -85,10 +85,10 @@ pub fn recover_plaintexts(cts: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
   // Treat the concatenated buffer as a repeated XOR encryption with a key of
   // size |min_len| bytes. We'll put bytes at the same indexes in buckets and
   // try to find the key byte by scoring candidates based on text structure.
-  let (blocks, _) = find_repeated_xor_decryption_for_keysize(&concat, min_len);
+  let decrypted = find_repeated_xor_decryption_for_keysize(&concat, min_len);
 
   // Slice the concatenated buffer back into blocks of length |min_len|.
-  Vec::from_iter(blocks.chunks(min_len).map(|chunk| {
+  Vec::from_iter(decrypted.chunks(min_len).map(|chunk| {
     Vec::from_iter(chunk.iter().map(|b| *b))
   }))
 }
